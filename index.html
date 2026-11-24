@@ -2,40 +2,213 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>My GitHub Animation</title>
+  <title>Pythagoras Theorem Explainer</title>
   <style>
     body {
       margin: 0;
       height: 100vh;
       display: flex;
+      flex-direction: column;
       justify-content: center;
       align-items: center;
-      background-color: #0d1117; /* GitHub dark theme background */
+      background-color: #0d1117;
+      color: #e6edf3;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     }
-
-    .orb {
-      width: 80px;
-      height: 80px;
-      background: linear-gradient(45deg, #58a6ff, #bc8cff);
-      border-radius: 50%;
-      /* Links the element to the @keyframes rule below */
-      animation: bounceAndGlow 2s infinite ease-in-out;
+    h2 {
+      margin-bottom: 5px;
+      letter-spacing: 0.5px;
     }
-
-    /* Defines the animation stages from start (0%) to finish (100%) */
-    @keyframes bounceAndGlow {
-      0%, 100% {
-        transform: translateY(0) scale(1);
-        box-shadow: 0 0 20px rgba(88, 166, 255, 0.4);
-      }
-      50% {
-        transform: translateY(-100px) scale(1.15);
-        box-shadow: 0 20px 50px rgba(188, 140, 255, 0.8);
-      }
+    p {
+      color: #8b949e;
+      margin-top: 0;
+      margin-bottom: 15px;
+      font-size: 1.1rem;
+    }
+    canvas {
+      background-color: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 12px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    }
+    button {
+      margin-top: 18px;
+      padding: 10px 22px;
+      font-size: 1rem;
+      font-weight: 600;
+      color: #ffffff;
+      background-color: #238636;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    button:hover {
+      background-color: #2ea043;
     }
   </style>
 </head>
 <body>
-  <div class="orb"></div>
+
+  <h2>Pythagorean Theorem Visual Proof</h2>
+  <p id="caption">Step 1: Start with a right-angled triangle</p>
+  <canvas id="scene" width="600" height="460"></canvas>
+  <button onclick="startAnimation()">Replay Explainer</button>
+
+  <script>
+    const canvas = document.getElementById('scene');
+    const ctx = canvas.getContext('2d');
+    const caption = document.getElementById('caption');
+
+    // Scale: 1 unit = 32 pixels (3-4-5 triangle)
+    const scale = 32;
+    const a = 3 * scale; // 96px
+    const b = 4 * scale; // 128px
+
+    // Triangle vertices (Right angle at C)
+    const C = { x: 250, y: 270 };
+    const A = { x: C.x, y: C.y - a }; // Top vertex
+    const B = { x: C.x + b, y: C.y }; // Right vertex
+
+    let startTime = null;
+    let animationFrameId;
+
+    // Smooth easing function
+    function easeOutCubic(t) {
+      return 1 - Math.pow(1 - t, 3);
+    }
+
+    function drawLine(p1, p2, progress, color, width = 3) {
+      ctx.strokeStyle = color;
+      ctx.lineWidth = width;
+      ctx.beginPath();
+      ctx.moveTo(p1.x, p1.y);
+      ctx.lineTo(
+        p1.x + (p2.x - p1.x) * progress,
+        p1.y + (p2.y - p1.y) * progress
+      );
+      ctx.stroke();
+    }
+
+    function animate(timestamp) {
+      if (!startTime) startTime = timestamp;
+      const elapsed = (timestamp - startTime) / 1000; // Time in seconds
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // PHASE 1 (0s - 1.5s): Draw the Right Triangle
+      const triProgress = Math.min(elapsed / 1.5, 1);
+      if (elapsed < 1.5) caption.innerText = "Step 1: A right-angled triangle with sides a = 3, b = 4, c = 5";
+
+      drawLine(C, A, Math.min(triProgress * 3, 1), '#58a6ff');
+      if (triProgress > 0.33) drawLine(C, B, Math.min((triProgress - 0.33) * 3, 1), '#3fb950');
+      if (triProgress > 0.66) drawLine(A, B, Math.min((triProgress - 0.66) * 3, 1), '#d2a8ff');
+
+      // Right angle marker & side labels
+      if (triProgress === 1) {
+        ctx.strokeStyle = '#8b949e';
+        ctx.lineWidth = 1.5;
+        ctx.strokeRect(C.x, C.y - 14, 14, 14);
+
+        ctx.fillStyle = '#e6edf3';
+        ctx.font = 'bold 15px sans-serif';
+        ctx.fillText('a = 3', C.x - 48, C.y - a / 2 + 5);
+        ctx.fillText('b = 4', C.x + b / 2 - 18, C.y + 22);
+        ctx.fillText('c = 5', C.x + b / 2 + 8, C.y - a / 2 - 8);
+      }
+
+      // PHASE 2 (1.8s - 3.5s): Expand Square a² (Blue)
+      if (elapsed > 1.8) {
+        if (elapsed < 3.5) caption.innerText = "Step 2: Build a square on side a → Area = 3² = 9";
+        const pA = easeOutCubic(Math.min((elapsed - 1.8) / 1.4, 1));
+        const widthA = a * pA;
+
+        ctx.fillStyle = 'rgba(88, 166, 255, 0.25)';
+        ctx.strokeStyle = '#58a6ff';
+        ctx.lineWidth = 2;
+        ctx.fillRect(C.x - widthA, A.y, widthA, a);
+        ctx.strokeRect(C.x - widthA, A.y, widthA, a);
+
+        if (pA > 0.8) {
+          ctx.fillStyle = '#58a6ff';
+          ctx.font = 'bold 16px sans-serif';
+          ctx.fillText('a² = 9', C.x - a / 2 - 22, A.y + a / 2 + 6);
+        }
+      }
+
+      // PHASE 3 (3.6s - 5.3s): Expand Square b² (Green)
+      if (elapsed > 3.6) {
+        if (elapsed < 5.3) caption.innerText = "Step 3: Build a square on side b → Area = 4² = 16";
+        const pB = easeOutCubic(Math.min((elapsed - 3.6) / 1.4, 1));
+        const heightB = b * pB;
+
+        ctx.fillStyle = 'rgba(63, 185, 80, 0.25)';
+        ctx.strokeStyle = '#3fb950';
+        ctx.lineWidth = 2;
+        ctx.fillRect(C.x, C.y, b, heightB);
+        ctx.strokeRect(C.x, C.y, b, heightB);
+
+        if (pB > 0.8) {
+          ctx.fillStyle = '#3fb950';
+          ctx.font = 'bold 16px sans-serif';
+          ctx.fillText('b² = 16', C.x + b / 2 - 26, C.y + b / 2 + 6);
+        }
+      }
+
+      // PHASE 4 (5.4s - 7.2s): Expand Square c² (Purple) on Hypotenuse
+      if (elapsed > 5.4) {
+        if (elapsed < 7.2) caption.innerText = "Step 4: Build a square on hypotenuse c → Area = 5² = 25";
+        const pC = easeOutCubic(Math.min((elapsed - 5.4) / 1.5, 1));
+
+        // Vector along hypotenuse A -> B is (b, a). Outward perpendicular vector is (a, -b).
+        const outX = a * pC;
+        const outY = -b * pC;
+
+        ctx.fillStyle = 'rgba(210, 168, 255, 0.25)';
+        ctx.strokeStyle = '#d2a8ff';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(A.x, A.y);
+        ctx.lineTo(B.x, B.y);
+        ctx.lineTo(B.x + outX, B.y + outY);
+        ctx.lineTo(A.x + outX, A.y + outY);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+
+        if (pC > 0.8) {
+          ctx.fillStyle = '#d2a8ff';
+          ctx.font = 'bold 16px sans-serif';
+          const centerX = (A.x + B.x + outX) / 2 - 26;
+          const centerY = (A.y + B.y + outY) / 2 + 6;
+          ctx.fillText('c² = 25', centerX, centerY);
+        }
+      }
+
+      // PHASE 5 (7.5s+): Final Formula Reveal
+      if (elapsed > 7.5) {
+        caption.innerText = "Result: 9 + 16 = 25  →  a² + b² = c²";
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 20px sans-serif';
+        ctx.fillText('a² + b² = c²', 420, 415);
+        ctx.fillStyle = '#8b949e';
+        ctx.font = '16px sans-serif';
+        ctx.fillText('9 + 16 = 25', 432, 438);
+      }
+
+      if (elapsed < 8.5) {
+        animationFrameId = requestAnimationFrame(animate);
+      }
+    }
+
+    function startAnimation() {
+      cancelAnimationFrame(animationFrameId);
+      startTime = null;
+      animationFrameId = requestAnimationFrame(animate);
+    }
+
+    // Start automatically on load
+    startAnimation();
+  </script>
 </body>
 </html>
